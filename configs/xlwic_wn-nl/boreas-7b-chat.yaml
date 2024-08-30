@@ -1,0 +1,18 @@
+dataset_name: BramVanroy/xlwic_wn
+dataset_config: nl
+labels2idx:
+  anders: 0
+  hetzelfde: 1
+prompt: "Is de betekenis van '{target_word}' in de twee volgende Nederlandstalige zinnen hetzelfde of anders?\n\nZin 1: {example_1}\nZin 2: {example_2}"
+output_dir: results/xlwic_wn-nl/boreas-7b-chat
+model_name: yhavinga/Boreas-7B-chat
+dataset_split: test
+label_column: label
+f1_average: macro
+system_message: ""
+use_chat_template: true
+bnb_config: null
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 2
