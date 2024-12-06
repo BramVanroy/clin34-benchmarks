@@ -51,6 +51,15 @@ def main(
 
         results.append(result)
 
+    avg_keep_cols = ("model_name", "dataset_name", "weighted_avg_f1")
+    avg_results = [{key: value for key, value in result.items() if key in avg_keep_cols} for result in results]
+    avg_df = pd.DataFrame(avg_results).pivot_table(
+        index="model_name", columns="dataset_name", values="weighted_avg_f1"
+    )
+    # Add mean/median across datasets
+    avg_df["mean"] = avg_df.mean(axis=1)
+    avg_df["median"] = avg_df.median(axis=1)
+    avg_df = avg_df.sort_values("mean", ascending=False)
     df = pd.DataFrame(results)
 
     # Save the aggregated results to an Excel file, with each `dataset_name` in a separate sheet
@@ -64,6 +73,8 @@ def main(
                 .reset_index(drop=True)
             )
             data.to_excel(writer, sheet_name=sheetname, index=False)
+
+        avg_df.to_excel(writer, sheet_name="all-weighted_avg_f1", index=True)
 
 
 if __name__ == "__main__":

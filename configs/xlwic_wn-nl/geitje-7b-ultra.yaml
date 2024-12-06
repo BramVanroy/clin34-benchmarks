@@ -4,7 +4,7 @@ labels2idx:
   anders: 0
   hetzelfde: 1
 prompt: "Is de betekenis van '{target_word}' in de twee volgende Nederlandstalige zinnen hetzelfde of anders?\n\nZin 1: {example_1}\nZin 2: {example_2}"
-output_dir: results/xlwic_wn-nl/geitje-7b-ultra
+output_dir: results/benchmarks/xlwic_wn-nl/geitje-7b-ultra
 model_name: BramVanroy/GEITje-7B-ultra
 dataset_split: test
 label_column: label

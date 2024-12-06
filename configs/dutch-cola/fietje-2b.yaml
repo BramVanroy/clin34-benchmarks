@@ -3,7 +3,7 @@ labels2idx:
   incorrect: 0
   correct: 1
 prompt: "Is de volgende Nederlandstalige zin grammaticaal correct of incorrect?\n\n{Sentence}"
-output_dir: results/dutch-cola/fietje-2b
+output_dir: results/benchmarks/dutch-cola/fietje-2b
 model_name: BramVanroy/fietje-2b
 dataset_config: null
 dataset_split: test

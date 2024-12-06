@@ -3,7 +3,7 @@ labels2idx:
   negatief: 0
   positief: 1
 prompt: "Is het sentiment in de volgende Nederlandstalige boekrecensie positief of negatief?\n\n{text}"
-output_dir: results/dbrd/fietje-2b-chat
+output_dir: results/benchmarks/dbrd/fietje-2b-chat
 model_name: BramVanroy/fietje-2b-chat
 dataset_config: null
 dataset_split: test

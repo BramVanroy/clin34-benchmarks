@@ -1,0 +1,20 @@
+batch_size: 2
+bnb_config: null
+dataset_config: null
+dataset_name: GroNLP/dutch-cola
+dataset_split: test
+device: auto
+f1_average: macro
+label_column: Acceptability
+labels2idx:
+  correct: 1
+  incorrect: 0
+model_kwargs:
+  torch_dtype: auto
+model_name: mistralai/Mistral-7B-v0.3
+output_dir: results/benchmarks/dutch-cola/mistral-7b-v03
+prompt: 'Is de volgende Nederlandstalige zin grammaticaal correct of incorrect?
+
+
+  {Sentence}'
+use_chat_template: false

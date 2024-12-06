@@ -1,0 +1,34 @@
+batch_size: 4
+bnb_config: null
+convert_labels_to_int: true
+dataset_config: nl
+dataset_name: CohereForAI/Global-MMLU
+dataset_split: test
+device: auto
+f1_average: macro
+label_column: answer
+labels2idx:
+  A: 0
+  B: 1
+  C: 2
+  D: 3
+model_kwargs:
+  torch_dtype: auto
+model_name: mistralai/Mistral-7B-Instruct-v0.3
+num_workers: 36
+output_dir: results/benchmarks/mmlu/mistral-7b-instruct-v03
+prompt: '{question}
+
+  Antwoordopties:
+
+  A. {option_a}
+
+  B. {option_b}
+
+  C. {option_c}
+
+  D. {option_d}
+
+
+  Antwoord met A, B, C of D.'
+use_chat_template: true

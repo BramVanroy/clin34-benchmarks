@@ -1,0 +1,24 @@
+batch_size: 2
+bnb_config: null
+dataset_config: nl
+dataset_name: BramVanroy/xlwic_wn
+dataset_split: test
+device: auto
+f1_average: macro
+label_column: label
+labels2idx:
+  anders: 0
+  hetzelfde: 1
+model_kwargs:
+  torch_dtype: auto
+model_name: mistralai/Mistral-7B-Instruct-v0.1
+output_dir: results/benchmarks/xlwic_wn-nl/mistral-7b-instruct-v01
+prompt: 'Is de betekenis van ''{target_word}'' in de twee volgende Nederlandstalige
+  zinnen hetzelfde of anders?
+
+
+  Zin 1: {example_1}
+
+  Zin 2: {example_2}'
+system_message: ''
+use_chat_template: true

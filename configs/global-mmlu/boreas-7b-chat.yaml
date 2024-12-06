@@ -1,0 +1,21 @@
+dataset_name: CohereForAI/Global-MMLU
+labels2idx:
+  A: 0
+  B: 1
+  C: 2
+  D: 3
+convert_labels_to_int: true
+prompt: "{question}\nAntwoordopties:\nA. {option_a}\nB. {option_b}\nC. {option_c}\nD. {option_d}\n\nAntwoord met A, B, C of D."
+output_dir: results/benchmarks/mmlu/boreas-7b-chat
+model_name: yhavinga/Boreas-7B-chat
+dataset_config: nl
+dataset_split: test
+label_column: answer
+f1_average: macro
+use_chat_template: true
+bnb_config: null
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 4
+num_workers: 36

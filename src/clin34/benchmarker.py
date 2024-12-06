@@ -32,6 +32,7 @@ class Benchmarker:
     dataset_config: str = None
     dataset_split: str = "test"
     label_column: str = "label"
+    convert_labels_to_int: bool = False
     text_column: str = None
     f1_average: str = "macro"
     system_message: str = ""
@@ -44,6 +45,8 @@ class Benchmarker:
     save_config_as: Literal["json", "yaml"] = "yaml"
     batch_size: int = 1
     num_runs: int = 3
+    num_workers: int = 1
+    process_id: int = 0
 
     dataset: Dataset | KeyDataset = field(default=None, init=False)
     hf_tokenizer: PreTrainedTokenizer = field(default=None, init=False)
@@ -119,6 +122,11 @@ class Benchmarker:
             self.dataset_name, self.dataset_config, split=self.dataset_split, trust_remote_code=trust_remote_code
         )
 
+        if self.convert_labels_to_int:
+            self.dataset = self.dataset.map(
+                lambda item: {label_column: labels2idx[item[label_column]]}, num_proc=self.num_workers
+            )
+
         print(f"DATASET SIZE: {len(self.dataset):,}")
 
         self.true_label_idxs = self.dataset[self.label_column]
@@ -127,11 +135,19 @@ class Benchmarker:
         for label, label_idx in labels2idx.items():
             print(f"Dataset no. occurrences for {label}: {counts[label_idx]:,}")
 
+        if any(c == 0 for c in counts.values()):
+            raise ValueError(
+                "Some labels have no occurrences in the dataset. This is possible if your `labels2idx`"
+                " contains the wrong possible labels, or if the given `label_column` contains strings rather than integer labels. If the latter is the case, enable `convert_labels_to_int=true`."
+            )
+
         self._format_dataset()
 
     def _format_dataset(self):
         str_formatter = string.Formatter()
-        prompt_fields = [fld[1] for fld in str_formatter.parse(self.prompt) if fld]
+        prompt_fields = [
+            fld[1] for fld in str_formatter.parse(self.prompt) if fld and len(fld) >= 2 and fld[1] is not None
+        ]
 
         if prompt_fields:
             print(f"Filling out prompt fields: {prompt_fields}")
@@ -147,6 +163,7 @@ class Benchmarker:
                 batched=True,
                 batch_size=10_000,
                 desc="Applying prompt",
+                num_proc=self.num_workers,
             )
             self.dataset = KeyDataset(self.dataset, self.column_name_formatted)
         else:
@@ -191,16 +208,19 @@ class Benchmarker:
     @torch.inference_mode
     def process_dataset(self):
         run_results = {}
-        for run_idx in trange(
-            1, self.num_runs + 1, desc=f"Runs {self.model_name.split('/')[-1]} on {self.dataset_name.split('/')[-1]}"
-        ):
+        for run_idx in range(1, self.num_runs + 1):
             pdout = self.output_dir.joinpath(f"run_{run_idx}")
             pdout.mkdir(exist_ok=True, parents=True)
 
             pred_idxs = []
             with pdout.joinpath("results.jsonl").open("w", encoding="utf-8") as fhout:
                 for start_idx in trange(
-                    0, len(self.dataset), self.batch_size, desc=f"{self.model_name} run #{run_idx}", leave=False
+                    0,
+                    len(self.dataset),
+                    self.batch_size,
+                    desc=f"{self.model_name} run {run_idx}/{self.num_runs}",
+                    position=self.process_id,
+                    leave=False,
                 ):
                     orig_prompts = self.dataset[start_idx : start_idx + self.batch_size]
                     gold_label_idxs = self.true_label_idxs[start_idx : start_idx + self.batch_size]
@@ -306,16 +326,16 @@ class Benchmarker:
         }
 
     @classmethod
-    def from_json(cls, config_file: PathLike | str):
+    def from_json(cls, config_file: PathLike | str, **kwargs):
         with Path(config_file).open("r", encoding="utf-8") as fhin:
             config = json.load(fhin)
-        return cls(**config)
+        return cls(**config, **kwargs)
 
     @classmethod
-    def from_yaml(cls, config_file: PathLike | str):
+    def from_yaml(cls, config_file: PathLike | str, **kwargs):
         with Path(config_file).open("r", encoding="utf-8") as fhin:
             config = yaml.safe_load(fhin)
-        return cls(**config)
+        return cls(**config, **kwargs)
 
 
 def _fill_out_prompt(samples, prompt: str, column_name_formatted: str, prompt_fields: list[str]):

@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def add_confidence(results: dict):
+def add_confidence(results: dict) -> dict:
     """
     Modified from https://github.com/ScandEval/ScandEval/blob/dd20d1795bd0ccc1444b9612dbaf1b1abffc2a75/src/scandeval/scores.py#L123
     """
