@@ -17,5 +17,8 @@ prompt: 'Is het sentiment in de volgende Nederlandstalige boekrecensie positief 
   negatief?
 
 
-  {text}'
+  Boekrecensie: {text}
+
+
+  Antwoord met ''positief'' of ''negatief''.'
 use_chat_template: false

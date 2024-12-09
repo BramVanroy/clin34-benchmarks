@@ -1,21 +1,28 @@
+batch_size: 4
+bnb_config: null
+convert_labels_to_int: true
+dataset_config: nl
 dataset_name: CohereForAI/Global-MMLU
+dataset_split: test
+device: auto
+f1_average: macro
+label_column: answer
 labels2idx:
   A: 0
   B: 1
   C: 2
   D: 3
-convert_labels_to_int: true
-prompt: "{question}\nAntwoordopties:\nA. {option_a}\nB. {option_b}\nC. {option_c}\nD. {option_d}\n\nAntwoord met A, B, C of D."
-output_dir: results/benchmarks/mmlu/reynaerde-7b-chat
-model_name: ReBatch/Reynaerde-7B-Chat
-dataset_config: nl
-dataset_split: test
-label_column: answer
-f1_average: macro
-use_chat_template: true
-bnb_config: null
 model_kwargs:
   torch_dtype: auto
-device: auto
-batch_size: 4
+model_name: ReBatch/Reynaerde-7B-Chat
 num_workers: 36
+output_dir: results/benchmarks/mmlu/reynaerde-7b-chat
+prompt: "{{- question }}\n\n{% set options = [\n  ('A', option_a),\n  ('B', option_b),\n\
+  \  ('C', option_c),\n  ('D', option_d)\n] -%}\n{%- set available_options = options\
+  \ | selectattr('1', 'defined') | rejectattr('1', 'none') | list -%}\n{%- if available_options\
+  \ -%}\nAntwoordopties:\n{%- for letter, option in available_options %}\n{{ letter\
+  \ }}. {{ option }}\n{%- endfor %}\n\nAntwoord met {% for i in range(available_options|length)\
+  \ -%}\n'{{ available_options[i][0] }}'{% if i + 2 == available_options|length %}\
+  \ of {% elif i + 1 < available_options|length %}, {% endif %}\n{%- endfor -%}.\n\
+  {%- endif -%}\n"
+use_chat_template: true

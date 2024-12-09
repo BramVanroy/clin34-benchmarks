@@ -17,18 +17,12 @@ model_kwargs:
 model_name: mistralai/Mistral-7B-v0.3
 num_workers: 36
 output_dir: results/benchmarks/mmlu/mistral-7b-v03
-prompt: '{question}
-
-  Antwoordopties:
-
-  A. {option_a}
-
-  B. {option_b}
-
-  C. {option_c}
-
-  D. {option_d}
-
-
-  Antwoord met A, B, C of D.'
+prompt: "{{- question }}\n\n{% set options = [\n  ('A', option_a),\n  ('B', option_b),\n\
+  \  ('C', option_c),\n  ('D', option_d)\n] -%}\n{%- set available_options = options\
+  \ | selectattr('1', 'defined') | rejectattr('1', 'none') | list -%}\n{%- if available_options\
+  \ -%}\nAntwoordopties:\n{%- for letter, option in available_options %}\n{{ letter\
+  \ }}. {{ option }}\n{%- endfor %}\n\nAntwoord met {% for i in range(available_options|length)\
+  \ -%}\n'{{ available_options[i][0] }}'{% if i + 2 == available_options|length %}\
+  \ of {% elif i + 1 < available_options|length %}, {% endif %}\n{%- endfor -%}.\n\
+  {%- endif -%}\n"
 use_chat_template: false

@@ -1,18 +1,24 @@
-dataset_name: GroNLP/dutch-cola
-labels2idx:
-  incorrect: 0
-  correct: 1
-prompt: "Is de volgende Nederlandstalige zin grammaticaal correct of incorrect?\n\n{Sentence}"
-output_dir: results/benchmarks/dutch-cola/fietje-2b-chat
-model_name: BramVanroy/fietje-2b-chat
-dataset_config: null
-dataset_split: test
-label_column: Acceptability
-f1_average: macro
-system_message: ""
-use_chat_template: true
+batch_size: 2
 bnb_config: null
+dataset_config: null
+dataset_name: GroNLP/dutch-cola
+dataset_split: test
+device: auto
+f1_average: macro
+label_column: Acceptability
+labels2idx:
+  correct: 1
+  incorrect: 0
 model_kwargs:
   torch_dtype: auto
-device: auto
-batch_size: 2
+model_name: BramVanroy/fietje-2b-chat
+output_dir: results/benchmarks/dutch-cola/fietje-2b-chat
+prompt: 'Is de volgende tekst grammaticaal correct of incorrect?
+
+
+  Tekst: {Sentence}
+
+
+  Antwoord met ''correct'' of ''incorrect''.'
+system_message: ''
+use_chat_template: true

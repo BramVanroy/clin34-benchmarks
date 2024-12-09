@@ -13,8 +13,11 @@ model_kwargs:
   torch_dtype: auto
 model_name: mistralai/Mistral-7B-v0.3
 output_dir: results/benchmarks/dutch-cola/mistral-7b-v03
-prompt: 'Is de volgende Nederlandstalige zin grammaticaal correct of incorrect?
+prompt: 'Is de volgende tekst grammaticaal correct of incorrect?
 
 
-  {Sentence}'
+  Tekst: {Sentence}
+
+
+  Antwoord met ''correct'' of ''incorrect''.'
 use_chat_template: false

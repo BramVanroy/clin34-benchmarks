@@ -1,0 +1,19 @@
+dataset_name: alexandrainst/scala
+labels2idx:
+  incorrect: 0
+  correct: 1
+convert_labels_to_int: true
+prompt: "Is de volgende tekst grammaticaal correct of incorrect?\n\nTekst: {text}\n\nAntwoord met 'correct' of 'incorrect'."
+output_dir: results/benchmarks/scala/fietje-2b-instruct
+model_name: BramVanroy/fietje-2b-instruct
+dataset_config: nl
+dataset_split: test
+label_column: label
+f1_average: macro
+system_message: ""
+use_chat_template: true
+bnb_config: null
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 4

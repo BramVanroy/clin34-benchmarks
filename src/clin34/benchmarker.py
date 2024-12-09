@@ -3,23 +3,29 @@ import string
 from collections import Counter
 from copy import deepcopy
 from dataclasses import dataclass, field
-from functools import partial
 from os import PathLike
 from pathlib import Path
+from random import randrange
 from typing import Any, Literal
 
 import outlines
 import torch
 import yaml
 from datasets import Dataset, load_dataset
+from jinja2 import Template
 from outlines import models
 from outlines.models.transformers import Transformers as OutlinesHFModel
 from sklearn.metrics import classification_report, f1_score
 from tqdm import trange
 from transformers import BitsAndBytesConfig, PreTrainedModel, PreTrainedTokenizer
+from transformers import logging as hf_logging
 from transformers.pipelines.pt_utils import KeyDataset
 
 from clin34.significance import add_confidence
+from clin34.utils import is_jinja_template
+
+
+hf_logging.set_verbosity_error()
 
 
 @dataclass
@@ -40,13 +46,14 @@ class Benchmarker:
     bnb_config: dict[str, Any] = None
     model_kwargs: dict[str, Any] = None
     device: str | int | torch.device = "auto"
-    column_name_formatted: str = "formatted"
+    formatted_output_colname: str = "formatted"
     trust_remote_code: bool = False
     save_config_as: Literal["json", "yaml"] = "yaml"
     batch_size: int = 1
     num_runs: int = 3
     num_workers: int = 1
     process_id: int = 0
+    verbose: bool = True
 
     dataset: Dataset | KeyDataset = field(default=None, init=False)
     hf_tokenizer: PreTrainedTokenizer = field(default=None, init=False)
@@ -127,47 +134,67 @@ class Benchmarker:
                 lambda item: {label_column: labels2idx[item[label_column]]}, num_proc=self.num_workers
             )
 
-        print(f"DATASET SIZE: {len(self.dataset):,}")
+        if self.verbose:
+            print(f"DATASET SIZE: {len(self.dataset):,}")
 
         self.true_label_idxs = self.dataset[self.label_column]
 
         counts = Counter(self.true_label_idxs)
-        for label, label_idx in labels2idx.items():
-            print(f"Dataset no. occurrences for {label}: {counts[label_idx]:,}")
+        if self.verbose:
+            for label, label_idx in labels2idx.items():
+                print(f"Dataset no. occurrences for {label}: {counts[label_idx]:,}")
 
         if any(c == 0 for c in counts.values()):
             raise ValueError(
                 "Some labels have no occurrences in the dataset. This is possible if your `labels2idx`"
-                " contains the wrong possible labels, or if the given `label_column` contains strings rather than integer labels. If the latter is the case, enable `convert_labels_to_int=true`."
+                " contains the wrong possible labels, or if the given `label_column` contains strings rather than"
+                " integer labels. If the latter is the case, enable `convert_labels_to_int=true`."
             )
 
         self._format_dataset()
 
     def _format_dataset(self):
-        str_formatter = string.Formatter()
-        prompt_fields = [
-            fld[1] for fld in str_formatter.parse(self.prompt) if fld and len(fld) >= 2 and fld[1] is not None
-        ]
-
-        if prompt_fields:
-            print(f"Filling out prompt fields: {prompt_fields}")
-
-            fill_out_prompt = partial(
-                _fill_out_prompt,
-                prompt=self.prompt,
-                column_name_formatted=self.column_name_formatted,
-                prompt_fields=prompt_fields,
+        ds_columns = self.dataset.column_names
+        if self.formatted_output_colname in ds_columns:
+            raise ValueError(
+                f"Column name '{self.formatted_output_colname}' already exists in the dataset."
+                f" Please choose a different 'formatted_output_colname'."
             )
-            self.dataset = self.dataset.map(
-                fill_out_prompt,
-                batched=True,
-                batch_size=10_000,
-                desc="Applying prompt",
-                num_proc=self.num_workers,
-            )
-            self.dataset = KeyDataset(self.dataset, self.column_name_formatted)
-        else:
-            self.dataset = KeyDataset(self.dataset, self.text_column)
+
+        prompt_fields = []
+        use_jinja = True
+        if not is_jinja_template(self.prompt):
+            # If this is not a Jinja template, but just a legacy string with formattable fields, e.g. `Text: {text}`
+            str_formatter = string.Formatter()
+            prompt_fields = [
+                fld[1] for fld in str_formatter.parse(self.prompt) if fld and len(fld) >= 2 and fld[1] is not None
+            ]
+
+            if not prompt_fields:
+                self.dataset = KeyDataset(self.dataset, self.text_column)
+                return
+
+            use_jinja = False
+
+        self.dataset = self.dataset.map(
+            _fill_out_prompt,
+            fn_kwargs={
+                "column_name_formatted": self.formatted_output_colname,
+                "prompt": self.prompt,
+                "use_jinja": use_jinja,
+                "prompt_fields": prompt_fields,
+            },
+            batched=True,
+            batch_size=10_000,
+            desc="Applying prompt",
+            num_proc=self.num_workers,
+        )
+        self.dataset = KeyDataset(self.dataset, self.formatted_output_colname)
+
+        if self.verbose:
+            rand_idx = randrange(0, len(self.dataset))
+            random_sample = self.dataset[rand_idx]
+            print(f"Applied prompt to random example {rand_idx}:\n{random_sample}")
 
     def change_model(
         self,
@@ -287,11 +314,12 @@ class Benchmarker:
         # Calculate confidence intervals of "accuracy", "macro average" f1, and "weighted avg" f1 of `run_results`
         run_results = add_confidence(run_results)
 
-        heading = f"{self.model_name.split('/')[-1]} on {self.dataset_name.split('/')[-1]}"
-        print(f"{heading}\n{'='*len(heading)}")
+        if self.verbose:
+            heading = f"{self.model_name.split('/')[-1]} on {self.dataset_name.split('/')[-1]}"
+            print(f"{heading}\n{'='*len(heading)}")
 
-        for metric in ("accuracy", "macro avg", "weighted avg"):
-            print(f"{metric}: {run_results[metric]['mean']*100:.4f} ± {run_results[metric]['ci95']*100:.4f}")
+            for metric in ("accuracy", "macro avg", "weighted avg"):
+                print(f"{metric}: {run_results[metric]['mean']*100:.4f} ± {run_results[metric]['ci95']*100:.4f}")
 
         self.output_dir.joinpath("agg_scores.json").write_text(json.dumps(run_results, indent=4), encoding="utf-8")
 
@@ -318,11 +346,12 @@ class Benchmarker:
             "bnb_config": self._for_saving_bnb_config,
             "model_kwargs": self._for_saving_model_kwargs,
             "device": self.device,
-            "column_name_formatted": self.column_name_formatted,
+            "formatted_output_colname": self.formatted_output_colname,
             "trust_remote_code": self.trust_remote_code,
             "save_config_as": self.save_config_as,
             "batch_size": self.batch_size,
             "num_runs": self.num_runs,
+            "verbose": self.verbose,
         }
 
     @classmethod
@@ -338,9 +367,21 @@ class Benchmarker:
         return cls(**config, **kwargs)
 
 
-def _fill_out_prompt(samples, prompt: str, column_name_formatted: str, prompt_fields: list[str]):
+def _fill_out_prompt(
+    samples, prompt: str | Template, prompt_fields: list[str], column_name_formatted: str, use_jinja: bool
+) -> dict[str, str]:
     num_items = len(next(iter(samples.values())))
     samples = [{colname: col[sample_idx] for colname, col in samples.items()} for sample_idx in range(num_items)]
-    return {
-        column_name_formatted: [prompt.format(**{fld: sample[fld] for fld in prompt_fields}) for sample in samples]
-    }
+
+    if use_jinja:
+        prompt = Template(prompt)
+        # Jinja2 will ignore any fields that are not present in the sample (unlike formattable strings, which will
+        # throw an error). This is why we need to filter out the fields that are not present in the sample for
+        # formattable strings but not for Jinja.
+        return {
+            column_name_formatted: [prompt.render(**sample) for sample in samples]
+        }
+    else:
+        return {
+            column_name_formatted: [prompt.format(**{fld: sample[fld] for fld in prompt_fields}) for sample in samples]
+        }

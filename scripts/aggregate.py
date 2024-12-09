@@ -63,7 +63,7 @@ def main(
     df = pd.DataFrame(results)
 
     # Save the aggregated results to an Excel file, with each `dataset_name` in a separate sheet
-    with pd.ExcelWriter(input_dir / "aggregated_results.xlsx") as writer:
+    with pd.ExcelWriter(input_dir / "aggregated_benchmark_results.xlsx") as writer:
         for dataset_name, data in df.groupby("dataset_name"):
             sheetname = dataset_name.split("/")[-1]
 

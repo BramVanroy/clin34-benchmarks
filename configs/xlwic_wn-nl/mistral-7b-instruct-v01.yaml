@@ -19,6 +19,9 @@ prompt: 'Is de betekenis van ''{target_word}'' in de twee volgende Nederlandstal
 
   Zin 1: {example_1}
 
-  Zin 2: {example_2}'
+  Zin 2: {example_2}
+
+
+  Antwoord met ''anders'' of ''hetzelfde''.'
 system_message: ''
 use_chat_template: true

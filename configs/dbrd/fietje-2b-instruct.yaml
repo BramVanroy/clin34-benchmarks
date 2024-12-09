@@ -2,7 +2,7 @@ dataset_name: dbrd
 labels2idx:
   negatief: 0
   positief: 1
-prompt: "Is het sentiment in de volgende Nederlandstalige boekrecensie positief of negatief?\n\n{text}"
+prompt: "Is het sentiment in de volgende Nederlandstalige boekrecensie positief of negatief?\n\nBoekrecensie: {text}\n\nAntwoord met 'positief' of 'negatief'."
 output_dir: results/benchmarks/dbrd/fietje-2b-instruct
 model_name: BramVanroy/fietje-2b-instruct
 dataset_config: null

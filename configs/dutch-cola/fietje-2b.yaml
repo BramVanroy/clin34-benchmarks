@@ -2,7 +2,7 @@ dataset_name: GroNLP/dutch-cola
 labels2idx:
   incorrect: 0
   correct: 1
-prompt: "Is de volgende Nederlandstalige zin grammaticaal correct of incorrect?\n\n{Sentence}"
+prompt: "Is de volgende tekst grammaticaal correct of incorrect?\n\nTekst: {Sentence}\n\nAntwoord met 'correct' of 'incorrect'."
 output_dir: results/benchmarks/dutch-cola/fietje-2b
 model_name: BramVanroy/fietje-2b
 dataset_config: null

@@ -1,18 +1,27 @@
-dataset_name: BramVanroy/xlwic_wn
+batch_size: 2
+bnb_config: null
 dataset_config: nl
+dataset_name: BramVanroy/xlwic_wn
+dataset_split: test
+device: auto
+f1_average: macro
+label_column: label
 labels2idx:
   anders: 0
   hetzelfde: 1
-prompt: "Is de betekenis van '{target_word}' in de twee volgende Nederlandstalige zinnen hetzelfde of anders?\n\nZin 1: {example_1}\nZin 2: {example_2}"
-output_dir: results/benchmarks/xlwic_wn-nl/geitje-7b-ultra
-model_name: BramVanroy/GEITje-7B-ultra
-dataset_split: test
-label_column: label
-f1_average: macro
-system_message: ""
-use_chat_template: true
-bnb_config: null
 model_kwargs:
   torch_dtype: auto
-device: auto
-batch_size: 2
+model_name: BramVanroy/GEITje-7B-ultra
+output_dir: results/benchmarks/xlwic_wn-nl/geitje-7b-ultra
+prompt: 'Is de betekenis van ''{target_word}'' in de twee volgende Nederlandstalige
+  zinnen hetzelfde of anders?
+
+
+  Zin 1: {example_1}
+
+  Zin 2: {example_2}
+
+
+  Antwoord met ''anders'' of ''hetzelfde''.'
+system_message: ''
+use_chat_template: true
