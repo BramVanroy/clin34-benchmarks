@@ -1,0 +1,24 @@
+dataset_name: GroNLP/dutch-cola
+labels2idx:
+  incorrect: 0
+  correct: 1
+prompt: |-
+  Is de volgende tekst grammaticaal correct of incorrect?
+
+  Tekst: {Sentence}
+
+  Antwoord met 'correct' of 'incorrect'.
+output_dir: results/benchmarks/dutch-cola/llama-3.2-3b
+model_name: meta-llama/Llama-3.2-3B-Instruct
+dataset_config:
+dataset_split: test
+label_column: Acceptability
+f1_average: macro
+system_message: ''
+use_chat_template: true
+bnb_config:
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 2
+num_workers: 36

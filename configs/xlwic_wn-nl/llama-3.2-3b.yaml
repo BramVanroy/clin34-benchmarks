@@ -1,0 +1,25 @@
+dataset_name: BramVanroy/xlwic_wn
+dataset_config: nl
+labels2idx:
+  anders: 0
+  hetzelfde: 1
+prompt: |-
+  Is de betekenis van '{target_word}' in de twee volgende Nederlandstalige zinnen hetzelfde of anders?
+
+  Zin 1: {example_1}
+  Zin 2: {example_2}
+
+  Antwoord met 'anders' of 'hetzelfde'.
+output_dir: results/benchmarks/xlwic_wn-nl/llama-3.2-3b
+model_name: meta-llama/Llama-3.2-3B-Instruct
+dataset_split: test
+label_column: label
+f1_average: macro
+system_message: ''
+use_chat_template: true
+bnb_config:
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 2
+num_workers: 36

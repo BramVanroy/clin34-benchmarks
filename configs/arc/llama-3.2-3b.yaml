@@ -1,0 +1,40 @@
+dataset_name: alexandrainst/m_arc
+labels2idx:
+  A: 0
+  B: 1
+  C: 2
+  D: 3
+convert_labels_to_int: true
+prompt: |
+  {{- instruction }}
+
+  {% set options = [
+    ('A', option_a),
+    ('B', option_b),
+    ('C', option_c),
+    ('D', option_d)
+  ] -%}
+  {%- set available_options = options | selectattr('1', 'defined') | rejectattr('1', 'none') | list -%}
+  {%- if available_options -%}
+  Antwoordopties:
+  {%- for letter, option in available_options %}
+  {{ letter }}. {{ option }}
+  {%- endfor %}
+
+  Antwoord met {% for i in range(available_options|length) -%}
+  '{{ available_options[i][0] }}'{% if i + 2 == available_options|length %} of {% elif i + 1 < available_options|length %}, {% endif %}
+  {%- endfor -%}.
+  {%- endif -%}
+output_dir: results/benchmarks/arc/llama-3.2-3b
+model_name: meta-llama/Llama-3.2-3B-Instruct
+dataset_config: nl
+dataset_split: test
+label_column: answer
+f1_average: macro
+use_chat_template: true
+bnb_config:
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 2
+num_workers: 36

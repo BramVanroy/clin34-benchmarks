@@ -1,25 +1,25 @@
-batch_size: 4
-bnb_config: null
-convert_labels_to_int: true
-dataset_config: nl
 dataset_name: alexandrainst/scala
-dataset_split: test
-device: auto
-f1_average: macro
-label_column: label
 labels2idx:
-  correct: 1
   incorrect: 0
-model_kwargs:
-  torch_dtype: auto
-model_name: ReBatch/Reynaerde-7B-Chat
-output_dir: results/benchmarks/scala/reynaerde-7b-chat
-prompt: 'Is de volgende tekst grammaticaal correct of incorrect?
-
+  correct: 1
+convert_labels_to_int: true
+prompt: |-
+  Is de volgende tekst grammaticaal correct of incorrect?
 
   Tekst: {text}
 
-
-  Antwoord met ''correct'' of ''incorrect''.'
+  Antwoord met 'correct' of 'incorrect'.
+output_dir: results/benchmarks/scala/reynaerde-7b-chat
+model_name: ReBatch/Reynaerde-7B-Chat
+dataset_config: nl
+dataset_split: test
+label_column: label
+f1_average: macro
 system_message: ''
 use_chat_template: true
+bnb_config:
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 2
+num_workers: 36

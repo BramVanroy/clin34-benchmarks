@@ -10,11 +10,12 @@ from typing import Any, Literal
 
 import outlines
 import torch
-import yaml
 from datasets import Dataset, load_dataset
 from jinja2 import Template
 from outlines import models
 from outlines.models.transformers import Transformers as OutlinesHFModel
+from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import LiteralScalarString
 from sklearn.metrics import classification_report, f1_score
 from tqdm import trange
 from transformers import BitsAndBytesConfig, PreTrainedModel, PreTrainedTokenizer
@@ -24,6 +25,8 @@ from transformers.pipelines.pt_utils import KeyDataset
 from clin34.significance import add_confidence
 from clin34.utils import is_jinja_template
 
+
+yaml = YAML()
 
 hf_logging.set_verbosity_error()
 
@@ -50,6 +53,7 @@ class Benchmarker:
     trust_remote_code: bool = False
     save_config_as: Literal["json", "yaml"] = "yaml"
     batch_size: int = 1
+    max_tokens: int = 10
     num_runs: int = 3
     num_workers: int = 1
     process_id: int = 0
@@ -323,11 +327,13 @@ class Benchmarker:
 
         self.output_dir.joinpath("agg_scores.json").write_text(json.dumps(run_results, indent=4), encoding="utf-8")
 
-        config = self.config()
+        config = deepcopy(self.config())
         if self.save_config_as == "json":
             self.output_dir.joinpath("config.json").write_text(json.dumps(config, indent=4), encoding="utf-8")
         elif self.save_config_as == "yaml":
-            self.output_dir.joinpath("config.yaml").write_text(yaml.dump(config), encoding="utf-8")
+            config["prompt"] = LiteralScalarString(config["prompt"])
+            with self.output_dir.joinpath("config.yaml").open("w", encoding="utf-8") as fhout:
+                yaml.dump(config, fhout)
 
     def config(self) -> dict[str, Any]:
         return {
@@ -363,7 +369,7 @@ class Benchmarker:
     @classmethod
     def from_yaml(cls, config_file: PathLike | str, **kwargs):
         with Path(config_file).open("r", encoding="utf-8") as fhin:
-            config = yaml.safe_load(fhin)
+            config = yaml.load(fhin)
         return cls(**config, **kwargs)
 
 
@@ -378,9 +384,7 @@ def _fill_out_prompt(
         # Jinja2 will ignore any fields that are not present in the sample (unlike formattable strings, which will
         # throw an error). This is why we need to filter out the fields that are not present in the sample for
         # formattable strings but not for Jinja.
-        return {
-            column_name_formatted: [prompt.render(**sample) for sample in samples]
-        }
+        return {column_name_formatted: [prompt.render(**sample) for sample in samples]}
     else:
         return {
             column_name_formatted: [prompt.format(**{fld: sample[fld] for fld in prompt_fields}) for sample in samples]

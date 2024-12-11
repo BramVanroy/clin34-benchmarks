@@ -1,25 +1,24 @@
-batch_size: 4
-bnb_config: null
-dataset_config: null
 dataset_name: dbrd
-dataset_split: test
-device: auto
-f1_average: macro
-label_column: label
 labels2idx:
   negatief: 0
   positief: 1
-model_kwargs:
-  torch_dtype: auto
-model_name: mistralai/Mistral-7B-Instruct-v0.3
-output_dir: results/benchmarks/dbrd/mistral-7b-instruct-v03
-prompt: 'Is het sentiment in de volgende Nederlandstalige boekrecensie positief of
-  negatief?
-
+prompt: |-
+  Is het sentiment in de volgende Nederlandstalige boekrecensie positief of negatief?
 
   Boekrecensie: {text}
 
-
-  Antwoord met ''positief'' of ''negatief''.'
+  Antwoord met 'positief' of 'negatief'.
+output_dir: results/benchmarks/dbrd/mistral-7b-instruct-v03
+model_name: mistralai/Mistral-7B-Instruct-v0.3
+dataset_config:
+dataset_split: test
+label_column: label
+f1_average: macro
 system_message: ''
 use_chat_template: true
+bnb_config:
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 2
+num_workers: 36

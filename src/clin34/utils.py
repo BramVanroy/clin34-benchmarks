@@ -1,7 +1,5 @@
 import re
 
-from jinja2 import Environment, meta, nodes
-
 
 def is_jinja_template(text: str) -> bool:
     # Patterns for Jinja delimiters: {{ variable }}, {% control %}, and {# comment #}

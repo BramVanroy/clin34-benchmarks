@@ -2,17 +2,23 @@ dataset_name: GroNLP/dutch-cola
 labels2idx:
   incorrect: 0
   correct: 1
-prompt: "Is de volgende tekst grammaticaal correct of incorrect?\n\nTekst: {Sentence}\n\nAntwoord met 'correct' of 'incorrect'."
+prompt: |-
+  Is de volgende tekst grammaticaal correct of incorrect?
+
+  Tekst: {Sentence}
+
+  Antwoord met 'correct' of 'incorrect'.
 output_dir: results/benchmarks/dutch-cola/fietje-2b-instruct
 model_name: BramVanroy/fietje-2b-instruct
-dataset_config: null
+dataset_config:
 dataset_split: test
 label_column: Acceptability
 f1_average: macro
-system_message: ""
+system_message: ''
 use_chat_template: true
-bnb_config: null
+bnb_config:
 model_kwargs:
   torch_dtype: auto
 device: auto
 batch_size: 2
+num_workers: 36

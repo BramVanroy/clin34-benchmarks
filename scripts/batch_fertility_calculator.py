@@ -8,6 +8,27 @@ from tqdm import tqdm
 from clin34.fertility import calculate_fertility
 
 
+tokenizers = {
+    "microsoft/phi-2": "phi-2",
+    "mistralai/Mistral-7B-v0.1": "mistral-7b-v01",
+    "mistralai/Mistral-7B-v0.3": "mistral-7b-v03",
+    "Tweeties/tweety-7b-dutch-v24a": "tweety-7b",
+    "yhavinga/Boreas-7B": "boreas-7b",
+    "yhavinga/Boreas-Qwen2-7B": "boreas-qwen2-7b",
+    "Rijgersberg/GEITje-7B": "geitje-7b",
+    "mistralai/Mistral-7B-Instruct-v0.1": "mistral-7b-instruct-v01",
+    "mistralai/Mistral-7B-Instruct-v0.3": "mistral-7b-instruct-v03",
+    "yhavinga/Boreas-7B-chat": "boreas-7b-chat",
+    "BramVanroy/GEITje-7B-ultra": "geitje-7b-ultra",
+    "ReBatch/Reynaerde-7B-Chat": "reynaerde-7b-chat",
+    "BramVanroy/fietje-2b-chat": "fietje-2b-chat",
+    "microsoft/Phi-3.5-mini-instruct": "phi-35-mini-instruct",
+    "yhavinga/Boreas-Qwen2-7B-chat-dpo": "boreas-qwen2-7b-dpo",
+    "meta-llama/Llama-3.2-3B-Instruct": "llama-3.2-3b",
+    "Qwen/Qwen2.5-3B-Instruct": "qwen-2.5-3b",
+}
+
+
 def main(overwrite: bool = False):
     dataset_name: str = "wikimedia/wikipedia"
     dataset_config: str = "20231101.nl"
@@ -17,23 +38,8 @@ def main(overwrite: bool = False):
     pdout = curr_file.parent.parent.joinpath("results/fertility")
 
     results = []
-    for tok_name in tqdm(
-        (
-            "BramVanroy/fietje-2b",
-            "BramVanroy/GEITje-7B-ultra",
-            "Rijgersberg/GEITje-7B-chat-v2",
-            "microsoft/phi-2",
-            "yhavinga/Boreas-7B-chat",
-            "ReBatch/Reynaerde-7B-Chat",
-            "Tweeties/tweety-7b-dutch-v24a",
-            "mistralai/Mistral-7B-Instruct-v0.1",
-            "mistralai/Mistral-7B-Instruct-v0.3",
-        ),
-        desc="Calculating fertility",
-        unit="tokenizer",
-    ):
-        lower_short_name = tok_name.split("/")[-1].lower().replace("_", "-")
-        output_file = pdout.joinpath(f"{lower_short_name}.json")
+    for tok_name, fname in tqdm(tokenizers.items(), desc="Calculating fertility", unit="tokenizer"):
+        output_file = pdout.joinpath(f"{fname}.json")
 
         if not overwrite and output_file.exists():
             result = json.loads(output_file.read_text(encoding="utf-8"))

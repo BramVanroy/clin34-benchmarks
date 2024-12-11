@@ -1,0 +1,23 @@
+dataset_name: dbrd
+labels2idx:
+  negatief: 0
+  positief: 1
+prompt: |-
+  Is het sentiment in de volgende Nederlandstalige boekrecensie positief of negatief?
+
+  Boekrecensie: {text}
+
+  Antwoord met 'positief' of 'negatief'.
+output_dir: results/benchmarks/dbrd/boreas-7b
+model_name: yhavinga/Boreas-7B
+dataset_config:
+dataset_split: test
+label_column: label
+f1_average: macro
+use_chat_template: false
+bnb_config:
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 2
+num_workers: 36

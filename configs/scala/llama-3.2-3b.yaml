@@ -1,0 +1,25 @@
+dataset_name: alexandrainst/scala
+labels2idx:
+  incorrect: 0
+  correct: 1
+convert_labels_to_int: true
+prompt: |-
+  Is de volgende tekst grammaticaal correct of incorrect?
+
+  Tekst: {text}
+
+  Antwoord met 'correct' of 'incorrect'.
+output_dir: results/benchmarks/scala/llama-3.2-3b
+model_name: meta-llama/Llama-3.2-3B-Instruct
+dataset_config: nl
+dataset_split: test
+label_column: label
+f1_average: macro
+system_message: ''
+use_chat_template: true
+bnb_config:
+model_kwargs:
+  torch_dtype: auto
+device: auto
+batch_size: 2
+num_workers: 36
