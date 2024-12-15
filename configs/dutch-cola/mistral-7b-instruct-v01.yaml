@@ -1,13 +1,13 @@
 dataset_name: GroNLP/dutch-cola
 labels2idx:
-  incorrect: 0
-  correct: 1
+  ongrammaticaal: 0
+  grammaticaal: 1
 prompt: |-
-  Is de volgende tekst grammaticaal correct of incorrect?
+  Is de volgende tekst grammaticaal (correct Nederlands) of ongrammaticaal (onjuist Nederlands)?
 
   Tekst: {Sentence}
 
-  Antwoord met 'correct' of 'incorrect'.
+  Antwoord met 'grammaticaal' of 'ongrammaticaal'.
 output_dir: results/benchmarks/dutch-cola/mistral-7b-instruct-v01
 model_name: mistralai/Mistral-7B-Instruct-v0.1
 dataset_config:
@@ -22,3 +22,4 @@ model_kwargs:
 device: auto
 batch_size: 2
 num_workers: 36
+num_runs: 5

@@ -1,15 +1,15 @@
 dataset_name: BramVanroy/xlwic_wn
 dataset_config: nl
 labels2idx:
-  anders: 0
-  hetzelfde: 1
+  verschillend: 0
+  identiek: 1
 prompt: |-
-  Is de betekenis van '{target_word}' in de twee volgende Nederlandstalige zinnen hetzelfde of anders?
+  Is de betekenis van '{target_word}' in de volgende zinnen identiek of verschillend?
 
   Zin 1: {example_1}
   Zin 2: {example_2}
 
-  Antwoord met 'anders' of 'hetzelfde'.
+  Antwoord met 'identiek' of 'verschillend'.
 output_dir: results/benchmarks/xlwic_wn-nl/mistral-7b-instruct-v01
 model_name: mistralai/Mistral-7B-Instruct-v0.1
 dataset_split: test
@@ -23,3 +23,4 @@ model_kwargs:
 device: auto
 batch_size: 2
 num_workers: 36
+num_runs: 5

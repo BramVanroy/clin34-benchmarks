@@ -5,25 +5,27 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from clin34.speed import model_inference_speed
+from clin34.naive_throughput import naive_throughput
 
 
 model_names = {
     "microsoft/phi-2": "phi-2",
     "mistralai/Mistral-7B-v0.1": "mistral-7b-v01",
-    "mistralai/Mistral-7B-v0.3": "mistral-7b-v03",
+    # "mistralai/Mistral-7B-v0.3": "mistral-7b-v03",
     "Tweeties/tweety-7b-dutch-v24a": "tweety-7b",
     "yhavinga/Boreas-7B": "boreas-7b",
     "Rijgersberg/GEITje-7B": "geitje-7b",
     "mistralai/Mistral-7B-Instruct-v0.1": "mistral-7b-instruct-v01",
-    "mistralai/Mistral-7B-Instruct-v0.3": "mistral-7b-instruct-v03",
+    # "mistralai/Mistral-7B-Instruct-v0.3": "mistral-7b-instruct-v03",
     "yhavinga/Boreas-7B-chat": "boreas-7b-chat",
     "BramVanroy/GEITje-7B-ultra": "geitje-7b-ultra",
-    "ReBatch/Reynaerde-7B-Chat": "reynaerde-7b-chat",
+    # "ReBatch/Reynaerde-7B-Chat": "reynaerde-7b-chat",
     "BramVanroy/fietje-2b-chat": "fietje-2b-chat",
+    "BramVanroy/fietje-2b": "fietje-2b-chat",
+    "BramVanroy/fietje-2b-instruct": "fietje-2b-instruct",
     "microsoft/Phi-3.5-mini-instruct": "phi-35-mini-instruct",
-    "yhavinga/Boreas-Qwen2-7B": "boreas-qwen2-7b",
-    "yhavinga/Boreas-Qwen2-7B-chat-dpo": "boreas-qwen2-7b-dpo",
+    # "yhavinga/Boreas-Qwen2-7B": "boreas-qwen2-7b",
+    # "yhavinga/Boreas-Qwen2-7B-chat-dpo": "boreas-qwen2-7b-dpo",
     "meta-llama/Llama-3.2-3B-Instruct": "llama-3.2-3b",
     "Qwen/Qwen2.5-3B-Instruct": "qwen-2.5-3b",
 }
@@ -47,7 +49,7 @@ def main(
             result = json.loads(output_file.read_text(encoding="utf-8"))
         else:
             try:
-                result = model_inference_speed(
+                result = naive_throughput(
                     output_file=output_file,
                     model_name=model_name,
                     context_lengths=context_lengths,

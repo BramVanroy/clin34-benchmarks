@@ -3,14 +3,15 @@ import time
 from os import PathLike
 from pathlib import Path
 from statistics import mean
+from typing import Literal
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 @torch.inference_mode()
-def model_inference_speed(
+def naive_throughput(
     output_file: str | PathLike,
     model_name: str,
     context_lengths: list[int],
@@ -19,6 +20,7 @@ def model_inference_speed(
     use_cuda: bool = True,
     random_token_id: int = 4096,
     use_torch_compile: bool = True,
+    attn_implementation: Literal["flash_attention_2", "eager", "sdpa"] = "flash_attention_2",
 ):
     """Benchmark the inference speed of a model for different context lengths as measured in tokens per second.
 
@@ -30,6 +32,7 @@ def model_inference_speed(
     :param use_cuda: whether to use CUDA for inference
     :param random_token_id: token ID to use for the dummy input sequence
     :param use_torch_compile: whether to use torch.compile to optimize the model
+    :param attn_implementation: attention implementation to use
     :return: a dictionary with the results
     """
     pdout = Path(output_file).parent
@@ -48,10 +51,14 @@ def model_inference_speed(
         "device_name": device_name,
         "n_iterations": n_iterations,
         "torch_compile": use_torch_compile,
+        "attn_implementation": attn_implementation,
     }
 
     try:
-        model = AutoModelForCausalLM.from_pretrained(model_name, device_map={"": device}, torch_dtype=torch.bfloat16)
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name, device_map={"": device}, torch_dtype=torch.bfloat16, attn_implementation=attn_implementation
+        )
         model.eval()
         if use_torch_compile:
             try:
@@ -73,9 +80,12 @@ def model_inference_speed(
 
     gen_kwargs = {
         "max_new_tokens": 1,
-        "pad_token_id": model.config.eos_token_id,
-        "eos_token_id": model.config.eos_token_id,
+        "pad_token_id": tokenizer.eos_token_id,
+        "eos_token_id": tokenizer.eos_token_id,
         "do_sample": False,
+        "top_p": None,
+        "top_k": None,
+        "temperature": None,
     }
 
     for ctx_len in context_lengths:
@@ -83,6 +93,7 @@ def model_inference_speed(
         inputs = {
             "input_ids": torch.LongTensor([[random_token_id] * ctx_len]).to(device),
             "attention_mask": torch.ones(1, ctx_len).to(device),
+            "position_ids": torch.arange(ctx_len).unsqueeze(0).to(device),
         }
 
         # Measure inference speed

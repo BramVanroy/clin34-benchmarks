@@ -5,16 +5,19 @@ from typing import Annotated
 import pandas as pd
 import typer
 import yaml
-from typer import Argument, Option
+from typer import Argument
 
 
-# In the paper I will only focus on Mistral v01 derivatives as baselines vs fietje
 ignore_fnames = {
     "boreas-qwen2-7b",
     "boreas-qwen2-7b-dpo",
     "mistral-7b-v03",
     "mistral-7b-instruct-v03",
     "reynaerde-7b-chat",  # Mistral v03
+}
+
+ignore_task_names = {
+    "scala",
 }
 
 
@@ -28,10 +31,16 @@ def main(
             resolve_path=True,
         ),
     ],
-    ignore_items: Annotated[
+    ignore_models: Annotated[
         bool,
-        Option(
-            help="Whether to ignore the items in the ignore list.",
+        typer.Option(
+            help="Whether to ignore the models in the ignore list.",
+        ),
+    ] = False,
+    ignore_tasks: Annotated[
+        bool,
+        typer.Option(
+            help="Whether to ignore the tasks in the ignore list.",
         ),
     ] = False,
 ):
@@ -42,8 +51,12 @@ def main(
             typer.echo(f"Skipping {pfscores} because {pfconfig} does not exist.")
             continue
 
-        if ignore_items and any(ignore_fname == pfscores.parent.stem for ignore_fname in ignore_fnames):
+        if ignore_models and pfscores.parent.stem in ignore_fnames:
             typer.echo(f"Skipping {pfscores.parent.stem} because it is in the ignore list.")
+            continue
+
+        if ignore_tasks and pfscores.parent.parent.stem in ignore_task_names:
+            typer.echo(f"Skipping {pfscores.parent.parent.stem} because it is in the ignore list.")
             continue
 
         result = {}
@@ -104,7 +117,7 @@ def main(
 
             data = (
                 data.drop(columns="dataset_name")
-                .sort_values(["accuracy", "weighted_avg_f1", "macro_avg_f1"], ascending=False)
+                .sort_values(["weighted_avg_f1", "macro_avg_f1", "accuracy"], ascending=False)
                 .reset_index(drop=True)
             )
             data.to_excel(writer, sheet_name=sheetname, index=False)

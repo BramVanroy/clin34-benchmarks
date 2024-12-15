@@ -8,7 +8,7 @@ prompt: |-
 
   Tekst: {text}
 
-  Antwoord met 'correct' of 'incorrect'.
+  Antwoord met 'correct' of 'incorrect'. De tekst is grammaticaal 
 output_dir: results/benchmarks/scala/geitje-7b
 model_name: Rijgersberg/GEITje-7B
 dataset_config: nl
@@ -22,3 +22,4 @@ model_kwargs:
 device: auto
 batch_size: 2
 num_workers: 36
+num_runs: 5

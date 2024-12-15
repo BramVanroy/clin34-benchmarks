@@ -23,7 +23,7 @@ prompt: |
 
   Antwoord met {% for i in range(available_options|length) -%}
   '{{ available_options[i][0] }}'{% if i + 2 == available_options|length %} of {% elif i + 1 < available_options|length %}, {% endif %}
-  {%- endfor -%}.
+  {%- endfor -%}. Het antwoord is 
   {%- endif -%}
 output_dir: results/benchmarks/mmlu/tweety-7b
 model_name: Tweeties/tweety-7b-dutch-v24a
@@ -38,3 +38,4 @@ model_kwargs:
 device: auto
 batch_size: 2
 num_workers: 36
+num_runs: 5

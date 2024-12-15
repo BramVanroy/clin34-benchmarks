@@ -33,6 +33,7 @@ dependencies = [
     "accelerate==0.33.0",
     "bitsandbytes==0.43.3",
     "datasets==2.20.0",
+    "flash-attn==2.6.3",
     "hf_transfer==0.1.8",
     "jinja2>3,<4",
     "openpyxl==3.1.5",
@@ -45,8 +46,7 @@ dependencies = [
     "scikit-learn==1.5.1",
     "spacy==3.7.5",
     "torch==2.4.0",
-    "tqdm==4.66.5",
-    "transformers==4.44.0",
+    "transformers==4.47.0",
     "typer==0.12.3"
 ]
 

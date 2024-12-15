@@ -8,7 +8,7 @@ prompt: |-
 
   Tekst: {text}
 
-  Antwoord met 'correct' of 'incorrect'.
+  Antwoord met 'correct' of 'incorrect'. De tekst is grammaticaal 
 output_dir: results/benchmarks/scala/mistral-7b-v01
 model_name: mistralai/Mistral-7B-v0.1
 dataset_config: nl
@@ -22,3 +22,4 @@ model_kwargs:
 device: auto
 batch_size: 2
 num_workers: 36
+num_runs: 5

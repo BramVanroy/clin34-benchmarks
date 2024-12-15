@@ -7,7 +7,7 @@ prompt: |-
 
   Boekrecensie: {text}
 
-  Antwoord met 'positief' of 'negatief'.
+  Antwoord met 'positief' of 'negatief'. Het sentiment is 
 output_dir: results/benchmarks/dbrd/boreas-7b
 model_name: yhavinga/Boreas-7B
 dataset_config:
@@ -21,3 +21,4 @@ model_kwargs:
 device: auto
 batch_size: 2
 num_workers: 36
+num_runs: 5
