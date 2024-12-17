@@ -198,7 +198,7 @@ class Benchmarker:
         if self.verbose:
             rand_idx = randrange(0, len(self.dataset))
             random_sample = self.dataset[rand_idx]
-            print(f"Applied prompt to random example {rand_idx}:\n{random_sample}")
+            print(f"Applied prompt to random example {rand_idx} of {self.dataset_name}:\n{random_sample}")
 
     def change_model(
         self,
@@ -364,13 +364,17 @@ class Benchmarker:
     def from_json(cls, config_file: PathLike | str, **kwargs):
         with Path(config_file).open("r", encoding="utf-8") as fhin:
             config = json.load(fhin)
-        return cls(**config, **kwargs)
+
+        config = {**config, **kwargs}
+        return cls(**config)
 
     @classmethod
     def from_yaml(cls, config_file: PathLike | str, **kwargs):
         with Path(config_file).open("r", encoding="utf-8") as fhin:
             config = yaml.load(fhin)
-        return cls(**config, **kwargs)
+
+        config = {**config, **kwargs}
+        return cls(**config)
 
 
 def _fill_out_prompt(

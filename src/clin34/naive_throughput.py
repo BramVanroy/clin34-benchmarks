@@ -7,7 +7,7 @@ from typing import Literal
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM
 
 
 @torch.inference_mode()
@@ -19,7 +19,7 @@ def naive_throughput(
     n_warmup: int = 5,
     use_cuda: bool = True,
     random_token_id: int = 4096,
-    use_torch_compile: bool = True,
+    use_torch_compile: bool = False,
     attn_implementation: Literal["flash_attention_2", "eager", "sdpa"] = "flash_attention_2",
 ):
     """Benchmark the inference speed of a model for different context lengths as measured in tokens per second.
@@ -44,7 +44,7 @@ def naive_throughput(
     torch.set_default_device(device)
 
     # GET GPU device name (like RTX 3090)
-    device_name = torch.cuda.get_device_name(0)
+    device_name = torch.cuda.get_device_name(device)
 
     results = {
         "model_name": model_name,
@@ -55,7 +55,6 @@ def naive_throughput(
     }
 
     try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(
             model_name, device_map={"": device}, torch_dtype=torch.bfloat16, attn_implementation=attn_implementation
         )
@@ -78,16 +77,6 @@ def naive_throughput(
             }
         )
 
-    gen_kwargs = {
-        "max_new_tokens": 1,
-        "pad_token_id": tokenizer.eos_token_id,
-        "eos_token_id": tokenizer.eos_token_id,
-        "do_sample": False,
-        "top_p": None,
-        "top_k": None,
-        "temperature": None,
-    }
-
     for ctx_len in context_lengths:
         # Generate a dummy input sequence of ctx_len tokens
         inputs = {
@@ -101,10 +90,7 @@ def naive_throughput(
             times = []
             for _ in range(n_iterations + n_warmup):
                 start_time = time.perf_counter()
-                model.generate(
-                    **inputs,
-                    **gen_kwargs,
-                )
+                model(**inputs)
                 time_diff = time.perf_counter() - start_time
                 times.append(time_diff)
         except torch.OutOfMemoryError:

@@ -24,7 +24,7 @@ def dataset_throughput(
     n_iterations: int = 3,
     n_warmup: int = 1,
     use_cuda: bool = True,
-    use_torch_compile: bool = True,
+    use_torch_compile: bool = False,
     attn_implementation: Literal["flash_attention_2", "eager", "sdpa"] = "flash_attention_2",
     max_length: int | None = None,
     num_proc: int = 6,
@@ -61,7 +61,7 @@ def dataset_throughput(
     torch.set_default_device(device)
 
     # GET GPU device name (like RTX 3090)
-    device_name = torch.cuda.get_device_name(0)
+    device_name = torch.cuda.get_device_name(device)
 
     results = {
         "model_name": model_name,
@@ -103,15 +103,6 @@ def dataset_throughput(
         print(f"OOM for model {model_name}")
         raise exc
 
-    gen_kwargs = {
-        "max_new_tokens": 1,
-        "pad_token_id": tokenizer.eos_token_id,
-        "eos_token_id": tokenizer.eos_token_id,
-        "do_sample": False,
-        "top_p": None,
-        "top_k": None,
-        "temperature": None,
-    }
     if not max_length:
         if hasattr(model.config, "max_position_embeddings"):
             max_length = model.config.max_position_embeddings
@@ -121,11 +112,8 @@ def dataset_throughput(
         if max_length is None or max_length > 8192:
             max_length = min(tokenizer_max_length, 8192)
 
-    print(f"Set max length for {model_name} to {max_length}")
-
     results["max_length"] = max_length
 
-    # Generate a dummy input sequence of ctx_len tokens
     def tokenize_function(batch_text):
         return tokenizer(batch_text)
 
@@ -171,15 +159,11 @@ def dataset_throughput(
         if current_block:
             blocks.append(current_block)
 
-        lens = [[len(d["input_ids"]) for d in data] for data in blocks]
-        print(lens)
         # Collate list of lists of dicts to list of dicts
         data = [
             {k: list(chain.from_iterable([d[k] for d in block])) for k in block[0].keys()}
             for block in tqdm(blocks, desc="Collating blocks", total=len(blocks))
         ]
-        lens = [len(d["input_ids"]) for d in data]
-        print(lens)
         # Check lengths
         for batch in data:
             if len(batch["input_ids"]) > max_length:
@@ -200,10 +184,7 @@ def dataset_throughput(
             start_time = time.perf_counter()
             for batch in tqdm(grouped_ds.iter(batch_size=1), total=len(grouped_ds), leave=False, unit="sample"):
                 inputs = {k: torch.LongTensor(v).to(device) for k, v in batch.items()}
-                model.generate(
-                    **inputs,
-                    **gen_kwargs,
-                )
+                model(**inputs)
             time_diff = time.perf_counter() - start_time
             times.append(time_diff)
     except torch.OutOfMemoryError:

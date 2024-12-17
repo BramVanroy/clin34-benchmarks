@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
+from typing import Annotated
 
 import pandas as pd
 import torch
+import typer
 from tqdm import tqdm
 
 from clin34.naive_throughput import naive_throughput
@@ -32,10 +34,33 @@ model_names = {
 
 
 def main(
-    overwrite: bool = False, min_context_length: int = 32, max_context_length: int = 2048, n_iterations: int = 100
+    overwrite: Annotated[
+        bool,
+        typer.Option(
+            "--force", "-f", help="Whether to process even the files whose directory already exists and is not empty"
+        ),
+    ] = False,
+    min_context_length: Annotated[
+        int,
+        typer.Option(
+            help="The minimum context length to test. Should be a power of 2.",
+        ),
+    ] = 32,
+    max_context_length: Annotated[
+        int,
+        typer.Option(
+            help="The maximum context length to test. Should be a power of 2.",
+        ),
+    ] = 2048,
+    n_iterations: Annotated[
+        int,
+        typer.Option(
+            help="The number of iterations to run for each context length.",
+        ),
+    ] = 100,
 ):
     curr_file = Path(__file__).resolve()
-    pdout = curr_file.parent.parent.joinpath("results/speed")
+    pdout = curr_file.parent.parent.joinpath("results/generic_speed")
 
     start_bit = min_context_length.bit_length() - 1
     end_bit = max_context_length.bit_length()
@@ -62,7 +87,7 @@ def main(
 
     df = pd.DataFrame(results)
     df = df.sort_values("tps_2048 mean", ascending=False)
-    df.to_excel(pdout.joinpath("aggregated_speed_results.xlsx"), index=False)
+    df.to_excel(pdout.joinpath("aggregated_generic_speed_results.xlsx"), index=False)
 
     if failed_models:
         print("The following models failed due to OOM errors:")
@@ -73,4 +98,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

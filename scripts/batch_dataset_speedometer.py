@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
+from typing import Annotated
 
 import pandas as pd
 import torch
+import typer
 from tqdm import tqdm
 
 from clin34.dataset_throughput import dataset_throughput
@@ -31,9 +33,16 @@ model_names = {
 }
 
 
-def main(overwrite: bool = False, n_iterations: int = 100):
+def main(
+    overwrite: Annotated[
+        bool,
+        typer.Option(
+            "--force", "-f", help="Whether to process even the files whose directory already exists and is not empty"
+        ),
+    ] = False,
+):
     curr_file = Path(__file__).resolve()
-    pdout = curr_file.parent.parent.joinpath("results/speed")
+    pdout = curr_file.parent.parent.joinpath("results/dataset_speed")
 
     results = []
     failed_models = []
@@ -53,7 +62,7 @@ def main(overwrite: bool = False, n_iterations: int = 100):
                     n_iterations=3,
                     n_warmup=1,
                     num_proc=96,
-                    max_samples=1000,
+                    max_samples=10_000,
                 )
             except torch.OutOfMemoryError:
                 failed_models.append(model_name)
@@ -61,8 +70,8 @@ def main(overwrite: bool = False, n_iterations: int = 100):
         results.append(result)
 
     df = pd.DataFrame(results)
-    df = df.sort_values("tps_2048 mean", ascending=False)
-    df.to_excel(pdout.joinpath("aggregated_speed_results.xlsx"), index=False)
+    df = df.sort_values("time mean", ascending=True)
+    df.to_excel(pdout.joinpath("aggregated_dataset_speed_results.xlsx"), index=False)
 
     if failed_models:
         print("The following models failed due to OOM errors:")
@@ -73,4 +82,4 @@ def main(overwrite: bool = False, n_iterations: int = 100):
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

@@ -46,11 +46,11 @@ def mp_worker(process_id: int, task_queue: Queue):
         task = task_queue.get()
         if task is None:  # Sentinel value to signal shutdown
             break
-        config_file, overwrite = task
-        process_single_config_file(config_file, overwrite, process_id=process_id)
+        config_file, overwrite, auto_device = task
+        process_single_config_file(config_file, overwrite, auto_device, process_id=process_id)
 
 
-def process_single_config_file(config_file: str, overwrite: bool, process_id: int | None = None):
+def process_single_config_file(config_file: str, overwrite: bool, auto_device: bool = True, process_id: int | None = None):
     if not config_file.endswith((".json", ".yaml", ".yml")):
         raise BadParameter("Config file must be a json or yaml file", param_hint="config_files")
 
@@ -60,11 +60,13 @@ def process_single_config_file(config_file: str, overwrite: bool, process_id: in
         typer.echo(f"Output directory {output_dir} already exists and is not empty. Skipping.")
         return
 
+    device = "auto" if auto_device else process_id
+
     try:
         if config_file.endswith(".json"):
-            benchmarker = Benchmarker.from_json(config_file, process_id=process_id)
+            benchmarker = Benchmarker.from_json(config_file, process_id=process_id, device=device)
         elif config_file.endswith((".yaml", ".yml")):
-            benchmarker = Benchmarker.from_yaml(config_file, process_id=process_id)
+            benchmarker = Benchmarker.from_yaml(config_file, process_id=process_id, device=device)
         else:
             raise BadParameter("Config file must be a json or yaml file", param_hint="config_files")
 
@@ -122,6 +124,13 @@ def main(
             help="Whether to ignore the tasks in the ignore list.",
         ),
     ] = False,
+    auto_device: Annotated[
+        bool,
+        typer.Option(
+            help="Whether to run device_map='auto' (spreads models over GPUs) or whether to keep models together."
+                 " Enabling auto_device may allow for larger models but may be slower for smaller models.",
+        ),
+    ] = True,
 ):
     if max_parallel_evals < 1:
         raise ValueError("max_parallel_evals must be at least 1")
@@ -173,7 +182,7 @@ def main(
             workers.append(p)
 
         for config_file in final_config_files:
-            task_queue.put((str(config_file), overwrite))
+            task_queue.put((str(config_file), overwrite, auto_device))
 
         # Trigger stop working
         for _ in process_ids:
