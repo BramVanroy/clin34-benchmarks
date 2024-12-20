@@ -239,6 +239,9 @@ class Benchmarker:
     @torch.inference_mode
     def process_dataset(self):
         run_results = {}
+        short_model_name = self.model_name.split("/")[-1]
+        short_dataset_name = self.dataset_name.split("/")[-1]
+
         for run_idx in range(1, self.num_runs + 1):
             pdout = self.output_dir.joinpath(f"run_{run_idx}")
             pdout.mkdir(exist_ok=True, parents=True)
@@ -249,7 +252,7 @@ class Benchmarker:
                     0,
                     len(self.dataset),
                     self.batch_size,
-                    desc=f"{self.model_name} run {run_idx}/{self.num_runs}",
+                    desc=f"{short_model_name} run {run_idx}/{self.num_runs} ({short_dataset_name})",
                     position=self.process_id,
                     leave=False,
                 ):
@@ -358,6 +361,7 @@ class Benchmarker:
             "batch_size": self.batch_size,
             "num_runs": self.num_runs,
             "verbose": self.verbose,
+            "num_workers": self.num_workers,
         }
 
     @classmethod

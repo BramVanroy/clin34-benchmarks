@@ -2,11 +2,12 @@ import json
 from pathlib import Path
 from typing import Annotated
 
+from numpy import isin
 import pandas as pd
 import typer
 import yaml
 from typer import Argument
-
+from functools import partial
 
 ignore_fnames = {
     "boreas-qwen2-7b",
@@ -62,8 +63,8 @@ def main(
         result = {}
         with open(pfconfig, "r", encoding="utf-8") as fhin:
             config = yaml.safe_load(fhin)
-            result["model_name"] = config["model_name"]
-            result["dataset_name"] = config["dataset_name"]
+            result["model_name"] = config["model_name"].split("/")[-1]
+            result["dataset_name"] = config["dataset_name"].split("/")[-1]
             result["dir"] = config["output_dir"]
 
         with open(pfscores, "r", encoding="utf-8") as fhin:
@@ -87,13 +88,13 @@ def main(
     avg_keep_cols = ("model_name", "dataset_name", "weighted_avg_f1")
     avg_results = [{key: value for key, value in result.items() if key in avg_keep_cols} for result in results]
     avg_df = pd.DataFrame(avg_results)
-    avg_df["dataset_name"] = avg_df["dataset_name"].str.split("/").str[-1]
     avg_df = avg_df.pivot_table(index="model_name", columns="dataset_name", values="weighted_avg_f1")
 
     # Add mean/median across datasets
     avg_df["mean"] = avg_df.mean(axis=1)
     avg_df["median"] = avg_df.median(axis=1)
-    avg_df = avg_df.sort_values("mean", ascending=False)
+    avg_df = avg_df.sort_values("median", ascending=False)
+
     df = pd.DataFrame(results)
 
     # Drop the 'mean' and 'median' columns if they exist since we'll recalculate them
@@ -104,26 +105,69 @@ def main(
 
     # Calculate the mean rank for each model across all tasks
     rank_df["mean_rank"] = rank_df.iloc[:, 1:].mean(axis=1, skipna=False)
+    rank_df["median_rank"] = rank_df.iloc[:, 1:].median(axis=1, skipna=False)
 
     # Add a final rank based on the mean rank
-    rank_df["final_rank"] = rank_df["mean_rank"].rank(ascending=True)
+    rank_df["final_rank (mean)"] = rank_df["mean_rank"].rank(ascending=True)
+    rank_df["final_rank (median)"] = rank_df["median_rank"].rank(ascending=True)
 
-    ranked_df = rank_df.sort_values(by="final_rank")
-
+    ranked_df = rank_df.sort_values(by="final_rank (median)")
+    
     # Save the aggregated results to an Excel file, with each `dataset_name` in a separate sheet
     with pd.ExcelWriter(input_dir / "aggregated_benchmark_results.xlsx") as writer:
         for dataset_name, data in df.groupby("dataset_name"):
-            sheetname = dataset_name.split("/")[-1]
-
             data = (
                 data.drop(columns="dataset_name")
                 .sort_values(["weighted_avg_f1", "macro_avg_f1", "accuracy"], ascending=False)
                 .reset_index(drop=True)
             )
-            data.to_excel(writer, sheet_name=sheetname, index=False)
+            data.to_excel(writer, sheet_name=dataset_name, index=False)
 
         avg_df.to_excel(writer, sheet_name="all-weighted_avg_f1", index=True)
         ranked_df.to_excel(writer, sheet_name="ranks", index=True)
+        
+    
+    # For LateX
+    latex_data = []
+    dataset_names = df["dataset_name"].unique().tolist()
+    model_names = avg_df.index.tolist()
+    for model_name in model_names:
+        data = {"model_name": model_name}
+        
+        # Find weighted_avg_f1 str of `model_name` in each dataset in df
+        for dataset_name in dataset_names:
+            data[f"{dataset_name}"] = df.loc[(df["model_name"] == model_name) & (df["dataset_name"] == dataset_name), "weighted_avg_f1 (str)"].values[0]
+        
+        # Find rank of `model_name` in each dataset in rank_df
+        for dataset_name in dataset_names:
+            data[f"{dataset_name}_rank"] = rank_df.loc[model_name, dataset_name]  
+        
+        # Find median of `model_name` in avg_df
+        # data["median"] = avg_df.loc[model_name, "median"]
+        # Find final median rank of `model_name` in rank_df
+        data["median rank"] = rank_df.loc[model_name, "final_rank (median)"]       
+        
+        latex_data.append(data)
+    
+    latex_df = pd.DataFrame(latex_data)
+    # Sort columns so that `model_name` is the first (index), then `median` and `median rank` are the last, and the other alphabetical
+    latex_df = latex_df[["model_name"] + sorted([col for col in latex_df.columns if col not in ["model_name", "median", "median rank"]]) + ["median rank"]]
+
+    
+    latex_df = latex_df.sort_values("median rank")
+    
+    def format_col(col, x):
+        if col == "median rank":
+            return f"{x:.1f}"
+        elif col.endswith("rank"):
+            return f"{x:.0f}"
+        else:
+            return x
+
+    # Create formatters dictionary
+    formatters = {col: partial(format_col, col) for col in latex_df.columns}
+
+    print(latex_df.to_latex(index=False, escape=True, formatters=formatters))
 
 
 if __name__ == "__main__":
