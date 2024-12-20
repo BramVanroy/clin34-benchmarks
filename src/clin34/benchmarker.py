@@ -242,6 +242,10 @@ class Benchmarker:
         short_model_name = self.model_name.split("/")[-1]
         short_dataset_name = self.dataset_name.split("/")[-1]
 
+        # TODO: rather than doing this in a loop, with full forward passes,
+        # we can only redo the sampling itself. This would be much faster and 
+        # is even available with Outlines in the samplers. However, that requires
+        # a full rework of this loop (wrt batching).
         for run_idx in range(1, self.num_runs + 1):
             pdout = self.output_dir.joinpath(f"run_{run_idx}")
             pdout.mkdir(exist_ok=True, parents=True)
